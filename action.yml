@@ -14,15 +14,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
     - name: Run llms.sh
       shell: bash
       run: |
-        chmod +x ./llms.sh
+        chmod +x "${{ github.action_path }}/llms.sh"
         if [ -n "${{ inputs.input-dir }}" ]; then
-          ./llms.sh "${{ inputs.input-dir }}"
+          "${{ github.action_path }}/llms.sh" "${{ inputs.input-dir }}"
         else
-          ./llms.sh
+          "${{ github.action_path }}/llms.sh"
         fi
