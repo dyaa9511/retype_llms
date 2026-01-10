@@ -15,16 +15,14 @@ runs:
   using: "composite"
   steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Set up bash
-      shell: bash
+      uses: actions/checkout@v4
 
     - name: Run llms.sh
+      shell: bash
       run: |
         chmod +x ./llms.sh
         if [ -n "${{ inputs.input-dir }}" ]; then
-          ./llms.sh "$INPUT_DIR"
+          ./llms.sh "${{ inputs.input-dir }}"
         else
           ./llms.sh
         fi
