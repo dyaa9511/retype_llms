@@ -81,9 +81,10 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Run Retype llms exporter
-        uses: zakaria-chahboun/retype_llms@v1
+        uses: zakaria-chahboun/retype_llms@v1.0.3
+        # uses: zakaria-chahboun/retype_llms@main for latest updates
         with:
           input-dir: source  # Optional: override input directory from retype.yml
 ```
