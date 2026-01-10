@@ -1,7 +1,6 @@
 # Retype → llms.txt Exporter
 
-**Description:**
-This project provides a lightweight GitHub Action and script to generate a `llms.txt` file from a Retype documentation project. It produces a **lossless, LLM-ready version of your markdown documentation**, with file separation, front-matter stripping, and optional context for image URLs.
+This project provides a lightweight GitHub Action and script to generate a `llms.txt` file from a [Retype](https://retype.com/) documentation project. It produces a **lossless, LLM-ready version of your markdown documentation**, with file separation, front-matter stripping, and optional context for image URLs.
 
 The script reads `retype.yml` to determine:
 
