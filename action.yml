@@ -1,25 +1,33 @@
-name: "Retype llms.txt Exporter"
+name: "Retype llms.txt Generator"
 description: "Generates llms.txt from a Retype project"
 author: "Zakaria Chahboun"
 branding:
-  icon: "document"
+  icon: "file-text"
   color: "blue"
 
 inputs:
-  input-dir:
-    description: "Optional path to the Retype input directory"
+  source:
+    description: "Optional path to the Retype source markdowns directory (overrides input in retype.yml)"
     required: false
     default: ""
 
 runs:
   using: "composite"
   steps:
-    - name: Run llms.sh
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    
+    - name: Install dependencies
+      shell: bash
+      run: pip install pyyaml
+    
+    - name: Run llms.py
       shell: bash
       run: |
-        chmod +x "${{ github.action_path }}/llms.sh"
-        if [ -n "${{ inputs.input-dir }}" ]; then
-          "${{ github.action_path }}/llms.sh" "${{ inputs.input-dir }}"
+        if [ -n "${{ inputs.source }}" ]; then
+          python "${{ github.action_path }}/llms.py" "${{ inputs.source }}"
         else
-          "${{ github.action_path }}/llms.sh"
+          python "${{ github.action_path }}/llms.py"
         fi
