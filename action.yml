@@ -1,6 +1,6 @@
 name: "Retype llms.txt Exporter"
 description: "Generates llms.txt from a Retype project"
-author: "Your Name"
+author: "Zakaria Chahboun"
 branding:
   icon: "document"
   color: "blue"
