@@ -10,6 +10,8 @@ The script reads `retype.yml` to determine:
 
 This ensures the generated `llms.txt` accurately reflects your project structure and image references.
 
+![image](/image.png)
+
 ---
 
 ## Features
