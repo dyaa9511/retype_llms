@@ -4,10 +4,6 @@ import yaml
 import pathlib
 import argparse
 
-import os
-import yaml
-import argparse
-
 def get_retype_config():
     # defaults
     input_dir = "."
@@ -54,6 +50,10 @@ def retype_slugify(text):
     text = re.sub(r'-+', '-', text).strip('-')
     return text
 
+def slugify_to_title(slug):
+    """Convert slug back to title format (replace - with space, capitalize)"""
+    return slug.replace("-", " ").title()
+
 def extract_front_matter(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
@@ -78,8 +78,10 @@ def generate_route(file_path, input_dir):
     file_path_obj = pathlib.Path(file_path)
     fm, content = extract_front_matter(file_path)
     
-    if "permalink" in fm: return fm["permalink"], content
-    if "route" in fm: return fm["route"], content
+    if "permalink" in fm: 
+        return fm["permalink"], content, fm
+    if "route" in fm: 
+        return fm["route"], content, fm
 
     rel_path = file_path_obj.relative_to(input_dir)
     slugged_parts = [retype_slugify(part) for part in rel_path.parent.parts]
@@ -96,7 +98,67 @@ def generate_route(file_path, input_dir):
         route = "/" + "/".join(slugged_parts + [slugged_filename]) + "/"
 
     route = re.sub(r'/+', '/', route)
-    return route, content
+    return route, content, fm
+
+def get_document_title(file_path, front_matter):
+    """Get title from front matter or generate from filename"""
+    if "title" in front_matter:
+        return front_matter["title"]
+    
+    # Generate title from filename
+    filename_stem = pathlib.Path(file_path).stem
+    slugged = retype_slugify(filename_stem)
+    return slugify_to_title(slugged)
+
+def replace_relative_links(content, base_url):
+    """Replace relative markdown links and images with absolute URLs"""
+    if not base_url:
+        return content
+    
+    # Pattern for markdown images: ![alt](path)
+    # Matches relative paths (starting with / or not starting with http:// or https://)
+    def replace_image(match):
+        alt_text = match.group(1)
+        path = match.group(2)
+        
+        # Skip if already absolute URL
+        if path.startswith('http://') or path.startswith('https://'):
+            return match.group(0)
+        
+        # Handle paths starting with /
+        if path.startswith('/'):
+            return f'![{alt_text}]({base_url}{path})'
+        else:
+            # Handle relative paths without leading /
+            return f'![{alt_text}]({base_url}/{path})'
+    
+    # Pattern for markdown links: [text](path)
+    def replace_link(match):
+        link_text = match.group(1)
+        path = match.group(2)
+        
+        # Skip if already absolute URL
+        if path.startswith('http://') or path.startswith('https://'):
+            return match.group(0)
+        
+        # Skip anchors
+        if path.startswith('#'):
+            return match.group(0)
+        
+        # Handle paths starting with /
+        if path.startswith('/'):
+            return f'[{link_text}]({base_url}{path})'
+        else:
+            # Handle relative paths without leading /
+            return f'[{link_text}]({base_url}/{path})'
+    
+    # Replace images first
+    content = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', replace_image, content)
+    
+    # Replace links
+    content = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replace_link, content)
+    
+    return content
 
 def main():
     print("🔍 Checking for Retype project...")
@@ -114,7 +176,7 @@ def main():
         print(f"❌ Input directory '{input_dir}' not found.")
         return
 
-    print(f"📁 Retype input directory from {input_dir_from}: {input_dir}")
+    print(f"📂 Retype input directory from {input_dir_from}: {input_dir}")
     print("📚 Processing markdown files:")
 
     output_file = os.path.join(input_dir, "static", "llms.txt")
@@ -130,38 +192,37 @@ def main():
 
     total_words = 0
     with open(output_file, "w", encoding="utf-8") as f:
-        # Improved AI Instructions
-        f.write("# NOTE FOR AI CONTEXT\n")
-        f.write("- This file contains multiple documentation sections concatenated into one.\n")
-        f.write("- Each section begins with a '### SECTION' header containing the Source File and Public URL.\n")
-        f.write("- Use the Public URL when referencing these documents to the user.\n")
-        if base_url:
-            f.write(f"- Absolute Image URL Base: {base_url}\n")
-            f.write("- Convert relative image paths found in sections by prefixing them with the Base URL.\n")
-        f.write("================================================================================\n\n")
-
         for i, file_path in enumerate(markdown_files):
             rel_display = os.path.relpath(file_path, ".")
             print(f"  → {rel_display}")
             
-            route, content = generate_route(file_path, input_dir)
+            route, content, fm = generate_route(file_path, input_dir)
             full_url = f"{base_url}{route}" if base_url else route
+            title = get_document_title(file_path, fm)
             
-            # Semantic headers that LLMs can easily parse
-            f.write(f"### SECTION: File: {rel_display}, URL: {full_url}\n")
-            f.write("--- CONTENT START ---\n")
+            # Replace relative links with absolute URLs if base_url exists
+            if base_url:
+                content = replace_relative_links(content, base_url)
+            
+            # XML structure
+            f.write("<document>\n")
+            f.write(f"<title>{title}</title>\n")
+            f.write(f"<url>{full_url}</url>\n")
+            f.write("<content>\n\n")
             
             clean_content = content.strip()
             f.write(clean_content)
             
-            f.write("\n--- CONTENT END ---\n")
+            f.write("\n\n</content>\n")
+            f.write("</document>\n")
             
             # Calculate word count for the stats
-            total_words += len(f"File: {rel_display} URL: {full_url}".split())
+            total_words += len(title.split())
+            total_words += len(full_url.split())
             total_words += len(clean_content.split())
             
             if i < len(markdown_files) - 1:
-                f.write("\n\n")
+                f.write("\n")
 
     total_tokens = int(total_words * 1.3)
     print("✅ Done!")
