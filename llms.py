@@ -115,6 +115,12 @@ def replace_relative_links(content, base_url):
     if not base_url:
         return content
     
+    # Parse base URL to extract domain and base path
+    from urllib.parse import urlparse
+    parsed = urlparse(base_url)
+    domain = f"{parsed.scheme}://{parsed.netloc}"
+    base_path = parsed.path.rstrip('/')
+    
     # Pattern for markdown images: ![alt](path)
     # Matches relative paths (starting with / or not starting with http:// or https://)
     def replace_image(match):
@@ -127,10 +133,14 @@ def replace_relative_links(content, base_url):
         
         # Handle paths starting with /
         if path.startswith('/'):
-            return f'![{alt_text}]({base_url}{path})'
+            # Check if path already contains the base_path to avoid duplication
+            if base_path and path.startswith(base_path):
+                return f'![{alt_text}]({domain}{path})'
+            else:
+                return f'![{alt_text}]({domain}{base_path}{path})'
         else:
             # Handle relative paths without leading /
-            return f'![{alt_text}]({base_url}/{path})'
+            return f'![{alt_text}]({domain}{base_path}/{path})'
     
     # Pattern for markdown links: [text](path)
     def replace_link(match):
@@ -147,10 +157,14 @@ def replace_relative_links(content, base_url):
         
         # Handle paths starting with /
         if path.startswith('/'):
-            return f'[{link_text}]({base_url}{path})'
+            # Check if path already contains the base_path to avoid duplication
+            if base_path and path.startswith(base_path):
+                return f'[{link_text}]({domain}{path})'
+            else:
+                return f'[{link_text}]({domain}{base_path}{path})'
         else:
             # Handle relative paths without leading /
-            return f'[{link_text}]({base_url}/{path})'
+            return f'[{link_text}]({domain}{base_path}/{path})'
     
     # Replace images first
     content = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', replace_image, content)
