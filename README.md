@@ -71,7 +71,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Generate llms.txt
-        uses: zakaria-chahboun/retype_llms@v2.0.0
+        uses: zakaria-chahboun/retype_llms@v3.0.1
       
       - name: Commit changes
         run: |
@@ -101,7 +101,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Generate llms.txt
-        uses: zakaria-chahboun/retype_llms@v2.0.0
+        uses: zakaria-chahboun/retype_llms@v3.0.1
       
       - name: Build Retype
         uses: retypeapp/action-build@latest
@@ -134,7 +134,7 @@ python llms.py source
 
 **GitHub Action:**
 ```yaml
-- uses: zakaria-chahboun/retype_llms@v2.0.0
+- uses: zakaria-chahboun/retype_llms@v3.0.1
   with:
     source: docs
 ```
